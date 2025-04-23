@@ -58,7 +58,7 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
   });
 
   // Controlled inputs for time entry in 12-hour format
-  const from24HourInner = (time24: string) => {
+  const from24HourInner = (time24: string): TimeInputValue => {
     if (!time24) return { hour: "12", minute: "00", ampm: "AM" };
     const [h, m] = time24.split(":");
     let hour = parseInt(h, 10);
@@ -70,10 +70,10 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
       hour = hour - 12;
       ampm = "PM";
     }
-    return { hour: hour.toString().padStart(2, "0"), minute, ampm: ampm as "AM" | "PM" };
+    return { hour: hour.toString().padStart(2, "0"), minute, ampm: ampm };
   };
 
-  const to24HourInner = (hour: string, minute: string, ampm: string) => {
+  const to24HourInner = (hour: string, minute: string, ampm: "AM" | "PM") => {
     let h = parseInt(hour, 10);
     if (ampm === "PM" && h < 12) h += 12;
     if (ampm === "AM" && h === 12) h = 0;
