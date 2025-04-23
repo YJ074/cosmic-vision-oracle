@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -24,6 +25,13 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				cosmic: {
+					purple: '#4B0082',
+					indigo: '#3A0CA3',
+					deepblue: '#1A1A40',
+					gold: '#D4AF37',
+					stardust: '#FFD700',
+				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
@@ -84,11 +92,38 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0)'
+					},
+					'50%': {
+						transform: 'translateY(-10px)'
+					}
+				},
+				'glow': {
+					'0%, 100%': {
+						opacity: '0.8',
+						filter: 'brightness(1)'
+					},
+					'50%': {
+						opacity: '1',
+						filter: 'brightness(1.2)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'float': 'float 6s ease-in-out infinite',
+				'glow': 'glow 3s ease-in-out infinite'
+			},
+			backgroundImage: {
+				'cosmic-gradient': 'linear-gradient(to right, #0f0c29, #302b63, #24243e)',
+				'star-pattern': 'radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 10px), radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 6px), radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 12px)'
+			},
+			fontFamily: {
+				'serif': ['Palatino', 'serif'],
 			}
 		}
 	},
