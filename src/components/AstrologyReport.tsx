@@ -44,15 +44,34 @@ const AstrologyReport: React.FC<AstrologyReportProps> = ({ userData, reportConte
   const formatPredictionText = (text: string) => {
     if (text.includes('§')) {
       const [title, ...content] = text.split('§');
+      
+      // Special handling for lists within the content
+      const formattedContent = content.join('').split('\n').map((paragraph, idx) => {
+        if (paragraph.trim().startsWith('•')) {
+          // This is a list item
+          return <li key={idx} className="ml-5">{paragraph.trim()}</li>;
+        } else if (paragraph.includes(' - ') && (paragraph.includes('House') || paragraph.includes('in '))) {
+          // This is likely a chart detail item with format "Planet in Sign" or "House - description"
+          const [label, description] = paragraph.split(' - ');
+          return (
+            <div key={idx} className="my-1">
+              <span className="font-semibold text-cosmic-gold/90">{label}</span>
+              {description && <span> - {description}</span>}
+            </div>
+          );
+        } else {
+          // Regular paragraph
+          return paragraph.trim() ? <p key={idx} className="my-2">{paragraph.trim()}</p> : null;
+        }
+      });
+      
       return (
         <div className="mb-6">
           <h3 className="text-xl font-serif font-semibold text-cosmic-gold mb-3">
             {title.trim()}
           </h3>
-          <div className="text-foreground leading-relaxed space-y-4">
-            {content.join('').split('\n').map((paragraph, idx) => (
-              <p key={idx}>{paragraph.trim()}</p>
-            ))}
+          <div className="text-foreground leading-relaxed space-y-2">
+            {formattedContent}
           </div>
         </div>
       );
