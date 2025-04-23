@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +22,7 @@ interface BirthDataFormProps {
 }
 
 // Helper to convert 12-hour time to 24-hour "HH:mm" string
-function to24Hour(hour: string, minute: string, ampm: string) {
+function to24Hour(hour: string, minute: string, ampm: "AM" | "PM") {
   let h = parseInt(hour, 10);
   if (ampm === "PM" && h < 12) h += 12;
   if (ampm === "AM" && h === 12) h = 0;
@@ -31,12 +32,12 @@ function to24Hour(hour: string, minute: string, ampm: string) {
 }
 
 // Helper to split "HH:mm" to { hour, minute, ampm }
-function from24Hour(time24: string) {
+function from24Hour(time24: string): TimeInputValue {
   if (!time24) return { hour: "12", minute: "00", ampm: "AM" };
   const [h, m] = time24.split(":");
   let hour = parseInt(h, 10);
   const minute = m;
-  let ampm = "AM";
+  let ampm: "AM" | "PM" = "AM";
   if (hour === 0) hour = 12;
   else if (hour === 12) ampm = "PM";
   else if (hour > 12) {
@@ -62,7 +63,7 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
     const [h, m] = time24.split(":");
     let hour = parseInt(h, 10);
     const minute = m;
-    let ampm = "AM";
+    let ampm: "AM" | "PM" = "AM";
     if (hour === 0) hour = 12;
     else if (hour === 12) ampm = "PM";
     else if (hour > 12) {
