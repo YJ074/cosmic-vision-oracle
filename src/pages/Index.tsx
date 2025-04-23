@@ -14,7 +14,7 @@ const Index = () => {
 
   const handleFormSubmit = (data: BirthData) => {
     setIsLoading(true);
-    
+
     // Simulate API call to generate report
     setTimeout(() => {
       try {
@@ -28,7 +28,7 @@ const Index = () => {
         console.error("Error generating report:", error);
         toast("Error", {
           description: "The stars are obscured. Please try again.",
-          variant: "destructive",
+          // Removing the `variant` prop, which Sonner does not support.
         });
       } finally {
         setIsLoading(false);
@@ -39,13 +39,11 @@ const Index = () => {
   return (
     <main className="min-h-screen w-full relative overflow-hidden px-4 pb-20">
       <StarryBackground starCount={200} />
-      
       <div className="max-w-6xl mx-auto pt-8 md:pt-16">
         <CosmicHeader 
           title="Cosmic Vision Oracle"
           subtitle="Ancient Vedic Wisdom for Your Future Path"
         />
-        
         <div className="mt-8 md:mt-12 flex flex-col items-center">
           {!reportData ? (
             <>
@@ -55,7 +53,6 @@ const Index = () => {
                   Provide your birth details to unlock the cosmic wisdom of Vedic astrology."
                 </p>
               </div>
-              
               <BirthDataForm onSubmit={handleFormSubmit} isLoading={isLoading} />
             </>
           ) : (
@@ -69,7 +66,6 @@ const Index = () => {
               >
                 ← Generate Another Report
               </button>
-              
               <AstrologyReport userData={userData!} reportContent={reportData} />
             </div>
           )}
@@ -80,3 +76,4 @@ const Index = () => {
 };
 
 export default Index;
+
