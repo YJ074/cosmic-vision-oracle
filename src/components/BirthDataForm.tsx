@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import TimeInput, { TimeInputValue } from "./TimeInput";
 import ReportTypeSelect from "./ReportTypeSelect";
 import DurationSelect from "./DurationSelect";
+import PlaceAutocompleteInput from "./PlaceAutocompleteInput";
 
 export interface BirthData {
   fullName: string;
@@ -84,6 +84,13 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
 
   const timeInput = from24HourInner(formData.timeOfBirth);
 
+  const handlePlaceChange = (val: string) => {
+    setFormData(prev => ({
+      ...prev,
+      placeOfBirth: val,
+    }));
+  };
+
   const handleTimeInputChange = (val: TimeInputValue) => {
     setFormData(prev => ({
       ...prev,
@@ -137,14 +144,9 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
       <TimeInput value={timeInput} onChange={handleTimeInputChange} />
       <div className="space-y-2">
         <Label htmlFor="placeOfBirth" className="text-cosmic-gold">Place of Birth</Label>
-        <Input
-          id="placeOfBirth"
-          name="placeOfBirth"
-          className="cosmic-input"
-          placeholder="City, Country"
-          required
+        <PlaceAutocompleteInput
           value={formData.placeOfBirth}
-          onChange={handleChange}
+          onChange={handlePlaceChange}
         />
       </div>
       <ReportTypeSelect 
