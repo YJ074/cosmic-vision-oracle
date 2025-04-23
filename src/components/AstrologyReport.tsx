@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BirthData } from './BirthDataForm';
+import { format, parse } from 'date-fns';
 
 interface AstrologyReportProps {
   userData: BirthData;
@@ -14,6 +15,17 @@ export interface ReportContent {
 }
 
 const AstrologyReport: React.FC<AstrologyReportProps> = ({ userData, reportContent }) => {
+  // Function to convert 24-hour time to 12-hour format with AM/PM
+  const formatTime = (timeString: string) => {
+    try {
+      const parsedTime = parse(timeString, 'HH:mm', new Date());
+      return format(parsedTime, 'h:mm a');
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return timeString; // Fallback to original time if formatting fails
+    }
+  };
+
   // Function to process text and convert section markers to headings
   const formatPredictionText = (text: string) => {
     if (text.includes('§')) {
@@ -44,7 +56,7 @@ const AstrologyReport: React.FC<AstrologyReportProps> = ({ userData, reportConte
           For {userData.fullName}
         </p>
         <div className="text-sm text-muted-foreground mt-2">
-          <p>Birth Details: {new Date(userData.dateOfBirth).toLocaleDateString()} at {userData.timeOfBirth}</p>
+          <p>Birth Details: {new Date(userData.dateOfBirth).toLocaleDateString()} at {formatTime(userData.timeOfBirth)}</p>
           <p>Location: {userData.placeOfBirth}</p>
         </div>
       </CardHeader>
