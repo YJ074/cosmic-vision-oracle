@@ -16,11 +16,11 @@ const Index = () => {
     setIsLoading(true);
 
     // Simulate API call to generate report
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
-        const generatedReport = generateReport(data);
+        const generatedReport = await generateReport(data); // Wait for the Promise to resolve
         setUserData(data);
-        setReportData(generatedReport);
+        setReportData(generatedReport); // Now we're setting the resolved array, not the Promise
         toast("Cosmic Vision Generated", {
           description: "Your astrological report is ready to view.",
         });
@@ -28,7 +28,6 @@ const Index = () => {
         console.error("Error generating report:", error);
         toast("Error", {
           description: "The stars are obscured. Please try again.",
-          // Removing the `variant` prop, which Sonner does not support.
         });
       } finally {
         setIsLoading(false);
@@ -76,4 +75,3 @@ const Index = () => {
 };
 
 export default Index;
-

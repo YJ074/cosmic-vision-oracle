@@ -104,7 +104,8 @@ const AstrologyReport: React.FC<AstrologyReportProps> = ({ userData, reportConte
         
         <Separator className="border-cosmic-purple/30" />
         
-        {reportContent.map((yearContent, index) => (
+        {/* Guard against reportContent not being an array */}
+        {Array.isArray(reportContent) && reportContent.map((yearContent, index) => (
           <div key={index} className="space-y-6">
             <h3 className="text-2xl font-serif font-semibold text-cosmic-gold flex items-center">
               <span className="h-[1px] flex-grow bg-cosmic-purple/30 mr-3"></span>
