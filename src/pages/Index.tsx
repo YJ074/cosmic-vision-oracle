@@ -5,7 +5,7 @@ import CosmicHeader from '@/components/CosmicHeader';
 import BirthDataForm, { BirthData } from '@/components/BirthDataForm';
 import AstrologyReport, { ReportContent } from '@/components/AstrologyReport';
 import { generateReport } from '@/utils/reportGenerator';
-import { toast } from '@/components/ui/toast';
+import { toast } from '@/components/ui/sonner';
 
 const Index = () => {
   const [userData, setUserData] = useState<BirthData | null>(null);
