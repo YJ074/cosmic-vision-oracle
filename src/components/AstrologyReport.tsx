@@ -1,8 +1,10 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BirthData } from './BirthDataForm';
 import { format, parse } from 'date-fns';
+import { toast } from '@/components/ui/sonner';
 
 interface AstrologyReportProps {
   userData: BirthData;
@@ -18,13 +20,25 @@ const AstrologyReport: React.FC<AstrologyReportProps> = ({ userData, reportConte
   // Function to convert 24-hour time to 12-hour format with AM/PM
   const formatTime = (timeString: string) => {
     try {
+      console.log('Formatting time:', timeString);
       const parsedTime = parse(timeString, 'HH:mm', new Date());
-      return format(parsedTime, 'h:mm a');
+      console.log('Parsed time:', parsedTime);
+      const formattedTime = format(parsedTime, 'h:mm a');
+      console.log('Formatted time:', formattedTime);
+      return formattedTime;
     } catch (error) {
       console.error('Error formatting time:', error);
       return timeString; // Fallback to original time if formatting fails
     }
   };
+
+  // Log birth time on component mount
+  useEffect(() => {
+    if (userData?.timeOfBirth) {
+      const formattedTime = formatTime(userData.timeOfBirth);
+      console.log(`Birth Time: ${userData.timeOfBirth} → ${formattedTime}`);
+    }
+  }, [userData]);
 
   // Function to process text and convert section markers to headings
   const formatPredictionText = (text: string) => {
