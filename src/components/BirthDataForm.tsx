@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 export interface BirthData {
   fullName: string;
   dateOfBirth: string;
-  timeOfBirth: string;
+  timeOfBirth: string; // always stored as "HH:mm" in 24-hour format
   placeOfBirth: string;
   reportType: string;
   duration: number;
@@ -19,19 +19,57 @@ interface BirthDataFormProps {
   isLoading?: boolean;
 }
 
+// Helper to convert 12-hour time to 24-hour "HH:mm" string
+function to24Hour(hour: string, minute: string, ampm: string) {
+  let h = parseInt(hour, 10);
+  if (ampm === "PM" && h < 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+  const hh = h.toString().padStart(2, "0");
+  const mm = minute.padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+// Helper to split "HH:mm" to { hour, minute, ampm }
+function from24Hour(time24: string) {
+  if (!time24) return { hour: "12", minute: "00", ampm: "AM" };
+  const [h, m] = time24.split(":");
+  let hour = parseInt(h, 10);
+  const minute = m;
+  let ampm = "AM";
+  if (hour === 0) hour = 12;
+  else if (hour === 12) ampm = "PM";
+  else if (hour > 12) {
+    hour = hour - 12;
+    ampm = "PM";
+  }
+  return { hour: hour.toString().padStart(2, "0"), minute, ampm };
+}
+
 const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = false }) => {
   const [formData, setFormData] = useState<BirthData>({
     fullName: '',
     dateOfBirth: '',
-    timeOfBirth: '',
+    timeOfBirth: '', // will be set via hour/minute/ampm fields
     placeOfBirth: '',
     reportType: 'comprehensive',
     duration: 1
   });
 
+  // Controlled inputs for time entry in 12-hour format
+  const { hour, minute, ampm } = from24Hour(formData.timeOfBirth);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // For the new time fields
+  const handleTimeChange = (name: string, value: string) => {
+    const new = { hour, minute, ampm, [name]: value };
+    setFormData(prev => ({
+      ...prev,
+      timeOfBirth: to24Hour(new.hour, new.minute, new.ampm)
+    }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -72,16 +110,51 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="timeOfBirth" className="text-cosmic-gold">Time of Birth</Label>
-        <Input
-          id="timeOfBirth"
-          name="timeOfBirth"
-          type="time"
-          className="cosmic-input"
-          required
-          value={formData.timeOfBirth}
-          onChange={handleChange}
-        />
+        <Label className="text-cosmic-gold">Time of Birth (12-hour format)</Label>
+        <div className="flex space-x-2 items-center">
+          <Input
+            name="hour"
+            type="number"
+            min={1}
+            max={12}
+            value={hour}
+            required
+            onChange={e => {
+              let val = e.target.value.replace(/\D/, '');
+              if (val === "" || Number(val) < 1) val = "1";
+              if (Number(val) > 12) val = "12";
+              handleTimeChange("hour", val);
+            }}
+            placeholder="HH"
+            className="cosmic-input w-16 text-center"
+          />
+          <span className="text-cosmic-gold font-semibold">:</span>
+          <Input
+            name="minute"
+            type="number"
+            min={0}
+            max={59}
+            value={minute}
+            required
+            onChange={e => {
+              let val = e.target.value.replace(/\D/, '');
+              if (val === "" || Number(val) < 0) val = "00";
+              if (Number(val) > 59) val = "59";
+              handleTimeChange("minute", val.padStart(2, "0"));
+            }}
+            placeholder="MM"
+            className="cosmic-input w-16 text-center"
+          />
+          <Select value={ampm} onValueChange={val => handleTimeChange("ampm", val)}>
+            <SelectTrigger className="cosmic-input w-20 text-center">
+              <SelectValue placeholder="AM/PM" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="AM">AM</SelectItem>
+              <SelectItem value="PM">PM</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       
       <div className="space-y-2">
