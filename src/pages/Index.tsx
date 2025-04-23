@@ -21,14 +21,12 @@ const Index = () => {
         const generatedReport = generateReport(data);
         setUserData(data);
         setReportData(generatedReport);
-        toast({
-          title: "Cosmic Vision Generated",
+        toast("Cosmic Vision Generated", {
           description: "Your astrological report is ready to view.",
         });
       } catch (error) {
         console.error("Error generating report:", error);
-        toast({
-          title: "Error",
+        toast("Error", {
           description: "The stars are obscured. Please try again.",
           variant: "destructive",
         });
