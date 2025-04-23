@@ -1,4 +1,3 @@
-
 import { BirthData } from "@/components/BirthDataForm";
 import { ReportContent } from "@/components/AstrologyReport";
 
@@ -64,6 +63,12 @@ const planets = [
   }
 ];
 
+// Add new interface for location coordinates
+interface LocationCoordinates {
+  lat: number;
+  lng: number;
+}
+
 // Helper function to calculate planetary positions based on birth data
 // This is a simplified simulation - real astrology would require more complex calculations
 function calculatePlanetaryPositions(birthData: BirthData): Record<string, string> {
@@ -92,6 +97,71 @@ function calculatePlanetaryPositions(birthData: BirthData): Record<string, strin
   });
   
   return positions;
+}
+
+// Helper function to calculate astrological houses with location data
+function calculateHousesWithLocation(birthData: BirthData, coordinates: LocationCoordinates): Record<string, string> {
+  const houses: Record<string, string> = {};
+  const houseNames = [
+    "Identity", "Values", "Communication", "Home & Family",
+    "Creativity", "Service", "Relationships", "Transformation",
+    "Exploration", "Career", "Community", "Spirituality"
+  ];
+  
+  // Parse birth time and use coordinates for more accurate calculations
+  const [birthHour, birthMinute] = birthData.timeOfBirth.split(':').map(Number);
+  
+  for (let i = 1; i <= 12; i++) {
+    const houseInfluence = calculateHouseInfluenceWithLocation(
+      birthHour, 
+      birthMinute, 
+      i, 
+      coordinates.lat, 
+      coordinates.lng
+    );
+    
+    houses[`House ${i}: ${houseNames[i-1]}`] = 
+      `Influence on your ${houseNames[i-1].toLowerCase()} derives from ${houseInfluence}`;
+  }
+  
+  return houses;
+}
+
+function calculateHouseInfluenceWithLocation(
+  hour: number, 
+  minute: number, 
+  house: number, 
+  latitude: number, 
+  longitude: number
+): string {
+  const influences = [
+    "strong inner guidance and self-awareness",
+    "balanced material and spiritual values",
+    "eloquent expression and intellectual curiosity",
+    "nurturing relationships and family bonds",
+    "creative self-expression and joyful pursuits",
+    "dedication to service and daily routines",
+    "harmonious partnerships and cooperative endeavors",
+    "profound transformation and regenerative power",
+    "philosophical expansion and spiritual journeys",
+    "disciplined ambition and structured achievements",
+    "innovative social connections and humanitarian ideals",
+    "deep spiritual connection and subconscious insights"
+  ];
+  
+  // Use location data to adjust influence
+  const latitudeInfluence = Math.abs(latitude) / 90; // Normalize to 0-1
+  const longitudeInfluence = ((longitude + 180) % 360) / 360; // Normalize to 0-1
+  
+  // Calculate influence index using all parameters
+  const influenceIndex = Math.floor(
+    (hour + minute + house + (latitudeInfluence * 12) + (longitudeInfluence * 12)) % influences.length
+  );
+  
+  const hemispherePrefix = latitude >= 0 ? "Northern" : "Southern";
+  const regionSuffix = longitude >= 0 ? "Eastern" : "Western";
+  
+  return `${influences[influenceIndex]} (${hemispherePrefix}-${regionSuffix} influence)`;
 }
 
 // Calculate astrological houses based on birth time
@@ -362,20 +432,44 @@ function getRandomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-// Generate a report based on the user's birth data
-export function generateReport(userData: BirthData): ReportContent[] {
+// Public Mapbox API key for demo purposes. For production, set your own!
+const DEMO_MAPBOX_KEY = "pk.eyJ1IjoibG92YWJsZWlsbCIsImEiOiJjanZwdmI1d20wNGZhM3pubnBrZ2drM2xlIn0.ClfC0cuGZ4SKyA9T6ZlPeA";
+
+// Update the main report generation function
+export async function generateReport(userData: BirthData): Promise<ReportContent[]> {
+  // Extract coordinates from place string using Mapbox forward geocoding
+  const getCoordinates = async (place: string): Promise<LocationCoordinates> => {
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(place)}.json?access_token=${DEMO_MAPBOX_KEY}`
+      );
+      const data = await response.json();
+      if (data.features && data.features[0]) {
+        const [lng, lat] = data.features[0].center;
+        return { lat, lng };
+      }
+    } catch (error) {
+      console.error('Error fetching coordinates:', error);
+    }
+    // Default coordinates if geocoding fails (0°N 0°E - null island)
+    return { lat: 0, lng: 0 };
+  };
+
   const result: ReportContent[] = [];
   const currentYear = new Date().getFullYear();
   
   // Calculate planetary positions for the birth chart
   const birthChart = calculatePlanetaryPositions(userData);
-  const houses = calculateHouses(userData);
   
   // Format birth chart into readable text
   const birthChartReadings = Object.entries(birthChart).map(([planet, sign]) => 
     `${planet} in ${sign}`
   );
   
+  // Update the predictions generation to include location data
+  const coordinates = await getCoordinates(userData.placeOfBirth);
+  const houses = calculateHousesWithLocation(userData, coordinates);
+
   // Format houses into readable text
   const houseReadings = Object.entries(houses).slice(0, 4).map(([house, influence]) => 
     `${house} - ${influence}`
