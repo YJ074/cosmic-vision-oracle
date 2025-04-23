@@ -65,10 +65,10 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
 
   // For the new time fields
   const handleTimeChange = (name: string, value: string) => {
-    const new = { hour, minute, ampm, [name]: value };
+    const timeFields = { hour, minute, ampm, [name]: value }; // Renamed 'new' to 'timeFields'
     setFormData(prev => ({
       ...prev,
-      timeOfBirth: to24Hour(new.hour, new.minute, new.ampm)
+      timeOfBirth: to24Hour(timeFields.hour, timeFields.minute, timeFields.ampm)
     }));
   };
 
