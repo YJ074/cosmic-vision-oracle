@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ export interface BirthData {
 interface BirthDataFormProps {
   onSubmit: (data: BirthData) => void;
   isLoading?: boolean;
+  onPlaceChange?: (placeName: string, coords?: {lat: number, lng: number}) => void;
 }
 
 // Helper to convert 12-hour time to 24-hour "HH:mm" string
@@ -47,7 +49,7 @@ function from24Hour(time24: string): TimeInputValue {
   return { hour: hour.toString().padStart(2, "0"), minute, ampm };
 }
 
-const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = false }) => {
+const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = false, onPlaceChange }) => {
   const [formData, setFormData] = React.useState<BirthData>({
     fullName: '',
     dateOfBirth: '',
@@ -84,11 +86,15 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
 
   const timeInput = from24HourInner(formData.timeOfBirth);
 
-  const handlePlaceChange = (val: string) => {
+  const handlePlaceChange = (val: string, coords?: {lat: number, lng: number}) => {
     setFormData(prev => ({
       ...prev,
       placeOfBirth: val,
     }));
+    // Call the onPlaceChange callback if provided
+    if (onPlaceChange) {
+      onPlaceChange(val, coords);
+    }
   };
 
   const handleTimeInputChange = (val: TimeInputValue) => {
