@@ -2,17 +2,25 @@
 import React, { useState } from 'react';
 import StarryBackground from '@/components/StarryBackground';
 import CosmicHeader from '@/components/CosmicHeader';
+import BirthDataFormWrapper from '@/components/BirthDataFormWrapper';
 import BirthDataForm, { BirthData } from '@/components/BirthDataForm';
 import AstrologyReport, { ReportContent } from '@/components/AstrologyReport';
 import { generateReport } from '@/utils/reportGenerator';
 import { toast } from '@/components/ui/sonner';
 
+interface EnhancedBirthData extends BirthData {
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+
 const Index = () => {
-  const [userData, setUserData] = useState<BirthData | null>(null);
+  const [userData, setUserData] = useState<EnhancedBirthData | null>(null);
   const [reportData, setReportData] = useState<ReportContent[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleFormSubmit = (data: BirthData) => {
+  const handleFormSubmit = (data: EnhancedBirthData) => {
     setIsLoading(true);
 
     // Simulate API call to generate report
@@ -52,7 +60,7 @@ const Index = () => {
                   Provide your birth details to unlock the cosmic wisdom of Vedic astrology."
                 </p>
               </div>
-              <BirthDataForm onSubmit={handleFormSubmit} isLoading={isLoading} />
+              <BirthDataFormWrapper onSubmit={handleFormSubmit} isLoading={isLoading} />
             </>
           ) : (
             <div className="w-full space-y-6">
