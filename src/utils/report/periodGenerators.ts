@@ -1,6 +1,6 @@
 
 import { BirthData } from "@/components/BirthDataForm";
-import { QuarterPeriod } from "./types";
+import { QuarterPeriod, Planet } from "./types";
 import { 
   getRelevantPlanetsForPeriod, 
   generateDetailedPredictionBlock 
@@ -21,7 +21,7 @@ export function generateMonthlyPredictions(
 
   return months.map((month, index) => {
     // Get relevant planetary influences for this month
-    const relevantPlanets = getRelevantPlanetsForPeriod(index);
+    const relevantPlanets = getRelevantPlanetsForPeriod(index) as Planet[];
     
     return `§${month}§\n\n${generateDetailedPredictionBlock(
       userData, 
@@ -70,7 +70,7 @@ export function generateQuarterlyPredictions(
 
   return quarters.map((quarter, index) => {
     // Get relevant planetary influences for this quarter
-    const relevantPlanets = getRelevantPlanetsForPeriod(index);
+    const relevantPlanets = getRelevantPlanetsForPeriod(index) as Planet[];
     
     return `§${quarter.title}§\n\n${generateDetailedPredictionBlock(
       userData, 
