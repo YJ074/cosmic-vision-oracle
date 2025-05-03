@@ -3,13 +3,10 @@ import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TimeInput, { TimeInputValue } from "./TimeInput";
 import ReportTypeSelect from "./ReportTypeSelect";
 import DurationSelect from "./DurationSelect";
-import PlaceAutocompleteInput from "./PlaceAutocompleteInput";
 import MapDisplay from "./MapDisplay";
-import IndiaLocationPicker from "./IndiaLocationPicker";
 
 export interface BirthData {
   fullName: string;
@@ -65,7 +62,6 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
   // State for coordinates and API key
   const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | undefined>(undefined);
   const [mapboxApiKey, setMapboxApiKey] = useState<string>("");
-  const [locationTab, setLocationTab] = useState<string>("global");
 
   // Load API key from localStorage on component mount
   React.useEffect(() => {
@@ -78,23 +74,6 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
   // Controlled inputs for time entry in 12-hour format
   const timeInput = from24Hour(formData.timeOfBirth);
 
-  const handlePlaceChange = (val: string, coords?: {lat: number, lng: number}) => {
-    setFormData(prev => ({
-      ...prev,
-      placeOfBirth: val,
-    }));
-    
-    // Save coordinates when a place is selected
-    if (coords) {
-      setCoordinates(coords);
-    }
-    
-    // Call the onPlaceChange callback if provided
-    if (onPlaceChange) {
-      onPlaceChange(val, coords);
-    }
-  };
-
   const handleTimeInputChange = (val: TimeInputValue) => {
     setFormData(prev => ({
       ...prev,
@@ -105,6 +84,11 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // If the placeOfBirth field is changed, call the onPlaceChange callback
+    if (name === 'placeOfBirth' && onPlaceChange) {
+      onPlaceChange(value);
+    }
   };
 
   const handleSelectChange = (name: "reportType" | "duration", value: string | number) => {
@@ -149,25 +133,15 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
       
       <div className="space-y-2">
         <Label htmlFor="placeOfBirth" className="text-cosmic-gold">Place of Birth</Label>
-        
-        <Tabs value={locationTab} onValueChange={setLocationTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="global">Global</TabsTrigger>
-            <TabsTrigger value="india">India</TabsTrigger>
-          </TabsList>
-          <TabsContent value="global" className="mt-2">
-            <PlaceAutocompleteInput
-              value={formData.placeOfBirth}
-              onChange={handlePlaceChange}
-            />
-          </TabsContent>
-          <TabsContent value="india" className="mt-2">
-            <IndiaLocationPicker
-              value={formData.placeOfBirth}
-              onChange={handlePlaceChange}
-            />
-          </TabsContent>
-        </Tabs>
+        <Input
+          id="placeOfBirth"
+          name="placeOfBirth"
+          className="cosmic-input"
+          placeholder="City, Country"
+          required
+          value={formData.placeOfBirth}
+          onChange={handleChange}
+        />
         
         {/* Show map when coordinates are available */}
         {coordinates && mapboxApiKey && (
