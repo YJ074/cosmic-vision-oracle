@@ -5,7 +5,7 @@ import CosmicHeader from '@/components/CosmicHeader';
 import BirthDataFormWrapper from '@/components/BirthDataFormWrapper';
 import BirthDataForm, { BirthData } from '@/components/BirthDataForm';
 import AstrologyReport, { ReportContent } from '@/components/AstrologyReport';
-import { generateReport } from '@/utils/reportGenerator';
+import { generateReport } from '@/utils/report';
 import { toast } from '@/components/ui/sonner';
 
 interface EnhancedBirthData extends BirthData {
