@@ -7,6 +7,7 @@ import TimeInput, { TimeInputValue } from "./TimeInput";
 import ReportTypeSelect from "./ReportTypeSelect";
 import DurationSelect from "./DurationSelect";
 import PlaceAutocompleteInput from "./PlaceAutocompleteInput";
+import MapDisplay from "./MapDisplay";
 
 export interface BirthData {
   fullName: string;
@@ -58,6 +59,18 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
     reportType: 'comprehensive',
     duration: 1
   });
+  
+  // State for coordinates and API key
+  const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | undefined>(undefined);
+  const [mapboxApiKey, setMapboxApiKey] = useState<string>("");
+
+  // Load API key from localStorage on component mount
+  React.useEffect(() => {
+    const savedApiKey = localStorage.getItem("mapbox_api_key");
+    if (savedApiKey) {
+      setMapboxApiKey(savedApiKey);
+    }
+  }, []);
 
   // Controlled inputs for time entry in 12-hour format
   const from24HourInner = (time24: string): TimeInputValue => {
@@ -91,6 +104,12 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
       ...prev,
       placeOfBirth: val,
     }));
+    
+    // Save coordinates when a place is selected
+    if (coords) {
+      setCoordinates(coords);
+    }
+    
     // Call the onPlaceChange callback if provided
     if (onPlaceChange) {
       onPlaceChange(val, coords);
@@ -154,6 +173,14 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
           value={formData.placeOfBirth}
           onChange={handlePlaceChange}
         />
+        
+        {/* Show map when coordinates are available */}
+        {coordinates && mapboxApiKey && (
+          <MapDisplay 
+            coordinates={coordinates} 
+            apiKey={mapboxApiKey}
+          />
+        )}
       </div>
       <ReportTypeSelect 
         value={formData.reportType}

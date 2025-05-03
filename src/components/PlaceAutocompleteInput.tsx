@@ -2,9 +2,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { MapPin, Compass } from "lucide-react";
+import { MapPin, Compass, Save } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
 
 interface PlaceAutocompleteInputProps {
   value: string;
@@ -19,6 +20,8 @@ interface LocationData {
   };
 }
 
+const MAPBOX_API_KEY_STORAGE = "mapbox_api_key";
+
 const PlaceAutocompleteInput: React.FC<PlaceAutocompleteInputProps> = ({ value, onChange }) => {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -27,6 +30,14 @@ const PlaceAutocompleteInput: React.FC<PlaceAutocompleteInputProps> = ({ value, 
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [apiKeyError, setApiKeyError] = useState(false);
+
+  // Load API key from localStorage on component mount
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem(MAPBOX_API_KEY_STORAGE);
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+    }
+  }, []);
 
   useEffect(() => {
     if (query.length < 3) {
@@ -89,6 +100,42 @@ const PlaceAutocompleteInput: React.FC<PlaceAutocompleteInputProps> = ({ value, 
     console.log('Selected location:', locationData);
   };
 
+  const saveApiKey = () => {
+    if (apiKey.trim()) {
+      localStorage.setItem(MAPBOX_API_KEY_STORAGE, apiKey);
+      toast("API Key Saved", {
+        description: "Your Mapbox API key has been saved to your browser.",
+      });
+      // Test the API key validity right away
+      testApiKey();
+    }
+  };
+
+  const testApiKey = async () => {
+    if (!apiKey.trim()) return;
+    
+    try {
+      const resp = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/london.json?access_token=${apiKey}`
+      );
+      
+      if (!resp.ok) {
+        setApiKeyError(true);
+        toast("Invalid API Key", {
+          description: "The Mapbox API key appears to be invalid. Please check and try again.",
+        });
+      } else {
+        setApiKeyError(false);
+        toast("API Key Valid", {
+          description: "Your Mapbox API key is working correctly.",
+        });
+      }
+    } catch (e) {
+      console.error('Error testing API key:', e);
+      setApiKeyError(true);
+    }
+  };
+
   return (
     <div className="relative space-y-2">
       {apiKey ? (
@@ -130,13 +177,23 @@ const PlaceAutocompleteInput: React.FC<PlaceAutocompleteInputProps> = ({ value, 
 
       {/* Mapbox API Key Input */}
       <div className="space-y-1">
-        <Input
-          placeholder="Enter Mapbox API Key"
-          value={apiKey}
-          onChange={e => setApiKey(e.target.value)}
-          className={`cosmic-input ${apiKeyError ? "border-red-500" : ""}`}
-          type="password"
-        />
+        <div className="flex gap-2">
+          <Input
+            placeholder="Enter Mapbox API Key"
+            value={apiKey}
+            onChange={e => setApiKey(e.target.value)}
+            className={`cosmic-input flex-1 ${apiKeyError ? "border-red-500" : ""}`}
+            type="password"
+          />
+          <Button 
+            onClick={saveApiKey} 
+            className="cosmic-button"
+            type="button"
+            size="sm"
+          >
+            <Save size={16} className="mr-1" /> Save Key
+          </Button>
+        </div>
         {apiKeyError && (
           <p className="text-red-500 text-xs">Invalid API key. Please check your Mapbox token.</p>
         )}
