@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TimeInput, { TimeInputValue } from "./TimeInput";
 import ReportTypeSelect from "./ReportTypeSelect";
 import DurationSelect from "./DurationSelect";
 import PlaceAutocompleteInput from "./PlaceAutocompleteInput";
 import MapDisplay from "./MapDisplay";
+import IndiaLocationPicker from "./IndiaLocationPicker";
 
 export interface BirthData {
   fullName: string;
@@ -63,6 +65,7 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
   // State for coordinates and API key
   const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | undefined>(undefined);
   const [mapboxApiKey, setMapboxApiKey] = useState<string>("");
+  const [locationTab, setLocationTab] = useState<string>("global");
 
   // Load API key from localStorage on component mount
   React.useEffect(() => {
@@ -73,31 +76,7 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
   }, []);
 
   // Controlled inputs for time entry in 12-hour format
-  const from24HourInner = (time24: string): TimeInputValue => {
-    if (!time24) return { hour: "12", minute: "00", ampm: "AM" };
-    const [h, m] = time24.split(":");
-    let hour = parseInt(h, 10);
-    const minute = m;
-    let ampm: "AM" | "PM" = "AM";
-    if (hour === 0) hour = 12;
-    else if (hour === 12) ampm = "PM";
-    else if (hour > 12) {
-      hour = hour - 12;
-      ampm = "PM";
-    }
-    return { hour: hour.toString().padStart(2, "0"), minute, ampm: ampm };
-  };
-
-  const to24HourInner = (hour: string, minute: string, ampm: "AM" | "PM") => {
-    let h = parseInt(hour, 10);
-    if (ampm === "PM" && h < 12) h += 12;
-    if (ampm === "AM" && h === 12) h = 0;
-    const hh = h.toString().padStart(2, "0");
-    const mm = minute.padStart(2, "0");
-    return `${hh}:${mm}`;
-  };
-
-  const timeInput = from24HourInner(formData.timeOfBirth);
+  const timeInput = from24Hour(formData.timeOfBirth);
 
   const handlePlaceChange = (val: string, coords?: {lat: number, lng: number}) => {
     setFormData(prev => ({
@@ -119,7 +98,7 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
   const handleTimeInputChange = (val: TimeInputValue) => {
     setFormData(prev => ({
       ...prev,
-      timeOfBirth: to24HourInner(val.hour, val.minute, val.ampm),
+      timeOfBirth: to24Hour(val.hour, val.minute, val.ampm),
     }));
   };
 
@@ -167,12 +146,28 @@ const BirthDataForm: React.FC<BirthDataFormProps> = ({ onSubmit, isLoading = fal
         />
       </div>
       <TimeInput value={timeInput} onChange={handleTimeInputChange} />
+      
       <div className="space-y-2">
         <Label htmlFor="placeOfBirth" className="text-cosmic-gold">Place of Birth</Label>
-        <PlaceAutocompleteInput
-          value={formData.placeOfBirth}
-          onChange={handlePlaceChange}
-        />
+        
+        <Tabs value={locationTab} onValueChange={setLocationTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="global">Global</TabsTrigger>
+            <TabsTrigger value="india">India</TabsTrigger>
+          </TabsList>
+          <TabsContent value="global" className="mt-2">
+            <PlaceAutocompleteInput
+              value={formData.placeOfBirth}
+              onChange={handlePlaceChange}
+            />
+          </TabsContent>
+          <TabsContent value="india" className="mt-2">
+            <IndiaLocationPicker
+              value={formData.placeOfBirth}
+              onChange={handlePlaceChange}
+            />
+          </TabsContent>
+        </Tabs>
         
         {/* Show map when coordinates are available */}
         {coordinates && mapboxApiKey && (

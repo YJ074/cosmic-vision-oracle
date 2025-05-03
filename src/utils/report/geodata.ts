@@ -9,11 +9,25 @@ const DEMO_MAPBOX_KEY = "pk.eyJ1IjoibG92YWJsZWlsbCIsImEiOiJjanZwdmI1d20wNGZhM3pu
 // Get coordinates from place name using Mapbox geocoding API
 export async function getCoordinates(place: string): Promise<LocationCoordinates> {
   try {
-    // Check if the location is in India using our local dataset
-    const indiaCoordinates = getIndiaLocationCoordinates(place);
-    if (indiaCoordinates) {
-      console.log('Using local India geo database for:', place);
-      return indiaCoordinates;
+    // First check if the location contains commas which might indicate it's from our India picker
+    // (which formats as "City, District, State")
+    if (place.includes(',')) {
+      // Try to get the city name (first part before any comma)
+      const cityName = place.split(',')[0].trim();
+      
+      // Check if the location is in India using our local dataset
+      const indiaCoordinates = getIndiaLocationCoordinates(cityName);
+      if (indiaCoordinates) {
+        console.log('Using local India geo database for:', place);
+        return indiaCoordinates;
+      }
+    } else {
+      // If no commas, still try the India database first
+      const indiaCoordinates = getIndiaLocationCoordinates(place);
+      if (indiaCoordinates) {
+        console.log('Using local India geo database for:', place);
+        return indiaCoordinates;
+      }
     }
     
     // If not found in India dataset, fallback to Mapbox API
