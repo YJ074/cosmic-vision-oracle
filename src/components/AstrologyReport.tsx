@@ -42,14 +42,28 @@ const AstrologyReport: React.FC<AstrologyReportProps> = ({ userData, reportConte
 
   // Function to process text and convert section markers to headings
   const formatPredictionText = (text: string) => {
+    if (!text) return null;
+    
     if (text.includes('§')) {
       const [title, ...content] = text.split('§');
       
-      // Special handling for lists within the content
-      const formattedContent = content.join('').split('\n').map((paragraph, idx) => {
+      // Special handling for lists and formatted content
+      const formattedContent = content.join('').trim().split('\n').map((paragraph, idx) => {
         if (paragraph.trim().startsWith('•')) {
           // This is a list item
           return <li key={idx} className="ml-5">{paragraph.trim()}</li>;
+        } else if (paragraph.includes('**')) {
+          // Handle markdown-style bold text for section headers
+          const parts = paragraph.split(/\*\*(.*?)\*\*/g);
+          return (
+            <div key={idx} className="my-2">
+              {parts.map((part, partIdx) => 
+                partIdx % 2 === 1 ? 
+                  <span key={partIdx} className="font-semibold text-cosmic-gold">{part}</span> : 
+                  <span key={partIdx}>{part}</span>
+              )}
+            </div>
+          );
         } else if (paragraph.includes(' - ') && (paragraph.includes('House') || paragraph.includes('in '))) {
           // This is likely a chart detail item with format "Planet in Sign" or "House - description"
           const [label, description] = paragraph.split(' - ');
@@ -63,7 +77,7 @@ const AstrologyReport: React.FC<AstrologyReportProps> = ({ userData, reportConte
           // Regular paragraph
           return paragraph.trim() ? <p key={idx} className="my-2">{paragraph.trim()}</p> : null;
         }
-      });
+      }).filter(Boolean); // Filter out null values
       
       return (
         <div className="mb-6">
@@ -83,7 +97,7 @@ const AstrologyReport: React.FC<AstrologyReportProps> = ({ userData, reportConte
     <Card className="cosmic-card w-full max-w-4xl mx-auto">
       <CardHeader className="pb-3 text-center">
         <CardTitle className="text-2xl text-cosmic-gold font-serif">
-          {userData.reportType.charAt(0).toUpperCase() + userData.reportType.slice(1)} Cosmic Vision
+          {userData.duration}-Year {userData.reportType.charAt(0).toUpperCase() + userData.reportType.slice(1)} Cosmic Vision
         </CardTitle>
         <p className="text-cosmic-gold/80 font-serif">
           For {userData.fullName}

@@ -210,8 +210,8 @@ function calculateHouseInfluence(hour: number, minute: number, house: number): s
   return influences[influenceIndex];
 }
 
-// Generate quarterly predictions with specific themes and planetary influences
-function generateQuarterlyPredictions(userData: BirthData, yearOffset: number): string[] {
+// Generate predictions based on duration - modified to support different timeframes
+function generatePredictions(userData: BirthData, yearOffset: number, isYearlyReport: boolean): string[] {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentSeason = getCurrentSeason(currentMonth);
@@ -221,215 +221,324 @@ function generateQuarterlyPredictions(userData: BirthData, yearOffset: number): 
   
   // Calculate astrological houses
   const houses = calculateHouses(userData);
-  
+
+  if (isYearlyReport) {
+    // Generate monthly predictions for 1-year reports
+    return generateMonthlyPredictions(userData, yearOffset, planetaryPositions, houses);
+  } else {
+    // Generate quarterly predictions for multi-year reports
+    return generateQuarterlyPredictions(userData, yearOffset, planetaryPositions, houses);
+  }
+}
+
+// Generate monthly predictions with detailed sections
+function generateMonthlyPredictions(
+  userData: BirthData, 
+  yearOffset: number, 
+  planetaryPositions: Record<string, string>, 
+  houses: Record<string, string>
+): string[] {
+  const months = [
+    "January", "February", "March", "April",
+    "May", "June", "July", "August",
+    "September", "October", "November", "December"
+  ];
+
+  return months.map((month, index) => {
+    // Get relevant planetary influences for this month
+    const relevantPlanets = getRelevantPlanetsForPeriod(index);
+    
+    return `§${month}§\n\n${generateDetailedPredictionBlock(userData, relevantPlanets, yearOffset, houses, month, index)}`;
+  });
+}
+
+// Generate quarterly predictions with detailed sections
+function generateQuarterlyPredictions(
+  userData: BirthData, 
+  yearOffset: number,
+  planetaryPositions: Record<string, string>,
+  houses: Record<string, string>
+): string[] {
   const quarters = [
     {
-      title: "Q1: Initiation & New Beginnings",
-      themes: ["personal growth", "spiritual awakening", "fresh opportunities"],
-      planets: ["Sun", "Mars", "Jupiter"]
+      title: "Q1: January - March",
+      period: "First Quarter",
+      theme: "New Beginnings & Initiative",
+      months: ["January", "February", "March"]
     },
     {
-      title: "Q2: Development & Integration",
-      themes: ["relationship dynamics", "skill mastery", "emotional balance"],
-      planets: ["Venus", "Moon", "Mercury"]
+      title: "Q2: April - June",
+      period: "Second Quarter",
+      theme: "Growth & Development",
+      months: ["April", "May", "June"]
     },
     {
-      title: "Q3: Manifestation & Achievement",
-      themes: ["career progress", "material gains", "social connections"],
-      planets: ["Saturn", "Jupiter", "Venus"]
+      title: "Q3: July - September",
+      period: "Third Quarter", 
+      theme: "Harvest & Evaluation",
+      months: ["July", "August", "September"]
     },
     {
-      title: "Q4: Reflection & Transformation",
-      themes: ["spiritual deepening", "inner wisdom", "future planning"],
-      planets: ["Pluto", "Neptune", "Uranus"]
+      title: "Q4: October - December",
+      period: "Fourth Quarter",
+      theme: "Reflection & Planning",
+      months: ["October", "November", "December"]
     }
   ];
 
   return quarters.map((quarter, index) => {
     // Get relevant planetary influences for this quarter
-    const relevantPlanets = quarter.planets.map(planetName => {
-      const planet = planets.find(p => p.name === planetName);
-      const sign = planetaryPositions[planetName];
-      return {
-        name: planetName,
-        sign: sign,
-        qualities: planet?.qualities || [],
-        influence: planet?.influence || ""
-      };
-    });
+    const relevantPlanets = getRelevantPlanetsForPeriod(index);
     
-    return `§${quarter.title}§\n\n${generateQuarterContent(userData, quarter.themes, relevantPlanets, yearOffset, houses)}`;
+    return `§${quarter.title}§\n\n${generateDetailedPredictionBlock(userData, relevantPlanets, yearOffset, houses, quarter.period, index, quarter.theme)}`;
   });
 }
 
-function getPlanetaryInfluence(quarterIndex: number): string {
-  const influences = [
-    "Jupiter and Mars align favorably",
-    "Venus and Mercury create harmonious aspects",
-    "Saturn forms significant transitions",
-    "The Moon and Sun bring illuminating phases"
+function getRelevantPlanetsForPeriod(periodIndex: number) {
+  // Different planetary influences for different periods
+  const planetGroups = [
+    ["Sun", "Mars", "Jupiter"], // Q1/Jan
+    ["Venus", "Moon", "Mercury"], // Q2/Feb
+    ["Saturn", "Jupiter", "Venus"], // Q3/Mar
+    ["Pluto", "Neptune", "Uranus"] // Q4/Apr
   ];
-  return influences[quarterIndex];
+  
+  const groupIndex = periodIndex % 4;
+  
+  return planetGroups[groupIndex].map(planetName => {
+    const planet = planets.find(p => p.name === planetName);
+    return {
+      name: planetName,
+      qualities: planet?.qualities || [],
+      influence: planet?.influence || ""
+    };
+  });
 }
 
-function generateQuarterContent(
+function generateDetailedPredictionBlock(
   userData: BirthData,
-  themes: string[],
-  relevantPlanets: {name: string; sign: string; qualities: string[]; influence: string}[],
+  relevantPlanets: {name: string; qualities: string[]; influence: string}[],
   yearOffset: number,
-  houses: Record<string, string>
+  houses: Record<string, string>,
+  periodName: string,
+  periodIndex: number,
+  periodTheme?: string
 ): string {
-  // Generate detailed planetary aspect descriptions
-  const planetaryDescriptions = relevantPlanets.map(planet => 
-    `Your ${planet.name} in ${planet.sign} influences your ${planet.influence}, bringing focus to ${getRandomElement(planet.qualities)}. `
-  ).join("");
-  
-  // Select relevant houses for this quarter
+  // Select themed influences based on period and planets
+  const careerInfluence = generateSectionContent('career', relevantPlanets, periodIndex);
+  const financialInfluence = generateSectionContent('financial', relevantPlanets, periodIndex);
+  const healthInfluence = generateSectionContent('health', relevantPlanets, periodIndex);
+  const personalInfluence = generateSectionContent('personal', relevantPlanets, periodIndex);
+  const remedies = generateSectionContent('remedies', relevantPlanets, periodIndex);
+
+  // Select relevant houses for this period
   const houseKeys = Object.keys(houses);
-  const relevantHouseKeys = [
-    houseKeys[yearOffset % 4], 
-    houseKeys[(yearOffset + 3) % 12], 
-    houseKeys[(yearOffset + 6) % 12]
-  ];
-  const houseInfluences = relevantHouseKeys.map(key => `${key} - ${houses[key]}`).join("\n");
+  const relevantHouseKey = houseKeys[(yearOffset + periodIndex) % 12];
+  const houseInfluence = `${relevantHouseKey} - ${houses[relevantHouseKey]}`;
   
+  const themeDesc = periodTheme ? 
+    `Theme: ${periodTheme}\n\n` : 
+    "";
+
   const predictions = [
-    planetaryDescriptions,
-    `This quarter brings opportunities for growth through ${getRandomElement(supportiveActivities)}. `,
-    `You will experience significant developments in ${themes.join(" and ")}. `,
-    `Focus on ${getRandomElement(spiritualPractices)} to enhance your journey. `,
-    generateTypeSpecificContent(userData.reportType),
-    `\n\nKey Astrological Houses Activated This Quarter:\n${houseInfluences}\n\n`,
-    `Guidance: ${generateGuidanceBasedOnPlanets(relevantPlanets)}`
+    themeDesc,
+    `**Career & Business**\n${careerInfluence}\n\n`,
+    `**Financial Status**\n${financialInfluence}\n\n`,
+    `**Health Overview**\n${healthInfluence}\n\n`,
+    `**Personal & Family Life**\n${personalInfluence}\n\n`,
+    `**Remedies & Spiritual Practices**\n${remedies}\n\n`,
+    `Key Astrological House: ${houseInfluence}`
   ].join("");
 
   return predictions;
 }
 
-function generateGuidanceBasedOnPlanets(planets: {name: string; sign: string; qualities: string[]; influence: string}[]): string {
-  const guidanceMap: Record<string, string[]> = {
-    "Sun": [
-      "Express your authentic self without hesitation",
-      "Focus on developing your unique talents and abilities",
-      "Spend time in natural sunlight to recharge your vital energy"
-    ],
-    "Moon": [
-      "Honor your emotional needs and cycles",
-      "Create a nurturing home environment",
-      "Connect with your intuition through dream journaling"
-    ],
-    "Mercury": [
-      "Enhance communication skills through reading and writing",
-      "Consider learning a new language or skill",
-      "Practice mindful listening in conversations"
-    ],
-    "Venus": [
-      "Cultivate beauty and harmony in your surroundings",
-      "Invest in relationships that bring mutual joy",
-      "Express yourself through art or creative pursuits"
-    ],
-    "Mars": [
-      "Channel energy into physical exercise or competitions",
-      "Take initiative in areas where you seek progress",
-      "Practice healthy assertion of your needs and boundaries"
-    ],
-    "Jupiter": [
-      "Expand your horizons through learning or travel",
-      "Practice generosity and optimism",
-      "Seek wisdom through philosophical or spiritual studies"
-    ],
-    "Saturn": [
-      "Build disciplined routines for long-term success",
-      "Take responsibility for your personal growth",
-      "Honor commitments and develop patience"
-    ],
-    "Uranus": [
-      "Embrace positive change and innovation",
-      "Connect with groups that share your ideals",
-      "Give yourself freedom to explore unconventional ideas"
-    ],
-    "Neptune": [
-      "Develop your spiritual practice or meditation",
-      "Express yourself through music, art, or poetry",
-      "Be discerning about what influences you absorb"
-    ],
-    "Pluto": [
-      "Release what no longer serves your highest good",
-      "Explore shadow work for personal transformation",
-      "Recognize and reclaim your personal power"
-    ]
-  };
-  
-  // Collect guidance for each relevant planet
-  const guidance = planets.map(planet => {
-    const options = guidanceMap[planet.name] || [];
-    return options.length > 0 ? getRandomElement(options) : "";
-  }).filter(g => g).join(". ");
-  
-  return guidance;
-}
-
-const supportiveActivities = [
-  "meditation and self-reflection",
-  "learning from spiritual texts",
-  "connecting with like-minded individuals",
-  "practicing mindfulness in daily activities",
-  "engaging in creative expression",
-  "physical movement aligned with cosmic rhythms",
-  "energy healing practices",
-  "rituals that honor natural cycles",
-  "journal writing during significant moon phases",
-  "studying ancient wisdom traditions"
-];
-
-const spiritualPractices = [
-  "developing a regular spiritual practice",
-  "maintaining emotional balance",
-  "cultivating inner wisdom",
-  "strengthening your connection to higher guidance",
-  "practicing gratitude and compassion",
-  "aligning with planetary energies through intention",
-  "working with gemstones associated with your birth chart",
-  "creating sacred space for contemplation",
-  "dream interpretation and analysis",
-  "breathwork techniques for spiritual awareness"
-];
-
-function generateTypeSpecificContent(reportType: string): string {
-  const contentMap: { [key: string]: string[] } = {
-    comprehensive: [
-      "Your overall growth path shows promising developments across multiple dimensions.",
-      "The planetary alignments suggest a period of holistic expansion in key life areas.",
-      "Balance material and spiritual aspects for optimal progress during this cycle."
-    ],
+function generateSectionContent(
+  section: 'career' | 'financial' | 'health' | 'personal' | 'remedies',
+  planets: {name: string; qualities: string[]}[],
+  periodIndex: number
+): string {
+  // Content libraries for different section types
+  const contentMap = {
     career: [
-      "Professional opportunities align with your natural talents as shown in your birth chart.",
-      "Leadership qualities associated with your Sun position will be highlighted and recognized.",
-      "Financial planning brings positive results, especially with Jupiter's influence."
+      "Professional growth aligns with your natural talents. Leadership opportunities may arise that showcase your unique abilities. Consider mentorship or specialized training to enhance your expertise.",
+      "Workplace dynamics require adaptability. Team projects flourish under your thoughtful contributions. This is an excellent period for networking and establishing meaningful professional connections.",
+      "Career transitions receive cosmic support now. Your innovative ideas will gain recognition from authority figures. Focus on long-term goals rather than immediate gratification.",
+      "Professional stability increases through disciplined efforts. Documentation and organization are highlighted. A methodical approach to challenges will yield the best results."
     ],
-    relationships: [
-      "Venus in your chart indicates deeper connections develop through authentic communication.",
-      "Family bonds strengthen through shared experiences aligned with your Moon placement.",
-      "New meaningful relationships enter your life through unexpected synchronicities."
+    financial: [
+      "Financial prospects improve through strategic planning. Investments in education or skills development return dividends. Avoid impulsive purchases, especially related to technology.",
+      "Money management benefits from intuitive decision-making. Unexpected income may arrive through creative endeavors. Review recurring expenses to identify potential savings.",
+      "Financial growth comes through collaborative ventures. Partnership opportunities might present lucrative possibilities. Maintain balanced accounts and clear financial boundaries.",
+      "Long-term financial security strengthens through disciplined saving. Consider consulting with financial advisors about retirement or property investments. Avoid lending substantial amounts during this period."
     ],
     health: [
-      "Holistic wellness approaches resonating with your birth chart bring lasting benefits.",
-      "Mental and physical balance improves significantly with proper planetary alignment.",
-      "New healthy habits take root and flourish under supportive cosmic energies."
+      "Vitality increases through movement and outdoor activities. Pay attention to spinal alignment and posture. Incorporating sunlight exposure into your daily routine enhances overall wellbeing.",
+      "Emotional health connects directly to physical wellness now. Hydration and proper rest are essential. Consider gentle detoxification practices appropriate for your constitution.",
+      "Digestive health benefits from mindful eating practices. Strengthen immunity through balanced nutrition. Active recovery days are as important as your workout sessions.",
+      "Nervous system health requires attention. Meditation practices bring notable benefits. Consider holistic approaches that address both physical symptoms and their emotional roots."
     ],
-    spiritual: [
-      "Spiritual insights lead to profound personal transformation, especially with Pluto's influence.",
-      "Ancient wisdom provides guidance for modern challenges through your Neptune connection.",
-      "Meditation practices aligned with your chart deepen your cosmic connection exponentially."
+    personal: [
+      "Family bonds strengthen through honest communication. A domestic matter reaches positive resolution. Ancestral connections or heritage may feature prominently in your thoughts and activities.",
+      "Relationship dynamics shift toward greater authenticity. A significant conversation clears lingering misunderstandings. Creative expression brings joy to your personal interactions.",
+      "Community connections enrich your personal life. An important relationship develops greater depth. Consider reviving traditions or rituals that bring meaning to your family gatherings.",
+      "Inner growth accelerates through contemplative practices. Boundaries in relationships become clearer and healthier. A past situation finally finds emotional closure, allowing new beginnings."
+    ],
+    remedies: [
+      "Incorporate copper vessels for drinking water. Chanting mantras associated with the Sun (Aditya Hridaya Stotra) or Mars (Om Angarakaya Namaha) brings balance. Wear red coral after proper astrological consultation.",
+      "Practice moon meditation on Mondays. Offer white flowers to water bodies. Consider wearing pearl or moonstone jewelry (after proper astrological consultation) to enhance intuitive abilities.",
+      "Add yellow items to your environment. Recite Jupiter mantras (Om Gurave Namaha) on Thursdays. Charitable acts toward educational institutions generate positive energy.",
+      "Practice Saturn mantras (Om Sham Shanaishcharaya Namaha) on Saturdays. Feeding crows or black animals generates beneficial karma. Service to elders aligns your energies positively."
     ]
   };
 
-  const options = contentMap[reportType] || contentMap.comprehensive;
-  return getRandomElement(options);
+  // Select content based on section and period
+  const options = contentMap[section];
+  const selectedIndex = (periodIndex + planets.length) % options.length;
+  return options[selectedIndex];
+}
+
+function generateYearSummary(
+  userData: BirthData,
+  yearOffset: number,
+  planetaryPositions: Record<string, string>
+): string {
+  const yearThemes = [
+    "Expansion & New Horizons",
+    "Stability & Foundation Building",
+    "Communication & Social Connections",
+    "Inner Growth & Emotional Healing",
+    "Creativity & Self-Expression",
+    "Service & Skill Development",
+    "Partnership & Relationship Focus",
+    "Transformation & Regeneration",
+    "Wisdom & Spiritual Development",
+    "Achievement & Recognition"
+  ];
+  
+  const favorablePeriods = [
+    "January-March and August-October",
+    "February-April and November-December",
+    "March-June and September-November",
+    "April-July and October-January",
+    "May-August and December-February"
+  ];
+  
+  const challengingPeriods = [
+    "November-December",
+    "January-February",
+    "July-August",
+    "March-April",
+    "September-October"
+  ];
+  
+  const recommendedActions = [
+    "Expand your knowledge through study or travel. Network with influential people in your field. Create a vision board for your long-term aspirations.",
+    "Create structured routines and systems. Focus on health and wellness fundamentals. Strengthen relationships with family members.",
+    "Enhance communication skills through courses or practice. Update your digital presence and professional profiles. Reconnect with old friends and colleagues.",
+    "Practice regular meditation or journaling. Seek therapeutic support if needed. Create emotional boundaries where necessary.",
+    "Invest time in creative hobbies and self-expression. Consider public speaking or performance opportunities. Share your unique perspective with others."
+  ];
+
+  const themeIndex = (yearOffset + userData.fullName.length) % yearThemes.length;
+  const favorablePeriodIndex = (yearOffset + userData.placeOfBirth.length) % favorablePeriods.length;
+  const challengingPeriodIndex = (yearOffset + 3) % challengingPeriods.length;
+  const actionIndex = (yearOffset + userData.dateOfBirth.length) % recommendedActions.length;
+
+  return `§Year Summary§\n\n` +
+    `**Major Theme:** ${yearThemes[themeIndex]}\n\n` +
+    `**Major Highlights:**\n` +
+    `This year brings significant developments in your ${getRandomElement(["personal growth", "professional path", "relationship dynamics", "spiritual journey"])}. ` +
+    `The transit of ${getRandomElement(Object.keys(planetaryPositions))} through ${getRandomElement(Object.values(planetaryPositions))} ` +
+    `creates opportunities for ${getRandomElement(["expansion", "transformation", "healing", "achievement"])} in ways you might not expect. ` +
+    `Pay attention to intuitive insights around the ${getRandomElement(["full moon", "new moon", "equinox", "solstice"])} periods.\n\n` +
+    
+    `**Favorable Periods:** ${favorablePeriods[favorablePeriodIndex]}\n` +
+    `**Challenging Periods:** ${challengingPeriods[challengingPeriodIndex]}\n\n` +
+    
+    `**Recommended Actions:**\n${recommendedActions[actionIndex]}\n\n` +
+    
+    `Remember that your conscious choices and actions will always be the most powerful factors in creating your destiny. ` +
+    `These astrological insights are guides to help you navigate with greater awareness and intention.`;
 }
 
 function getRandomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
+}
+
+function generateOverallForecast(userData: BirthData, duration: number): string {
+  // Themes based on report type and duration
+  const themesByType: Record<string, string[]> = {
+    comprehensive: [
+      "holistic development across multiple life dimensions",
+      "balanced growth in material and spiritual aspects",
+      "integration of different life areas into a harmonious whole"
+    ],
+    career: [
+      "professional evolution and skill development",
+      "leadership growth and career advancement opportunities",
+      "work-life integration and professional fulfillment"
+    ],
+    relationships: [
+      "deeper connection with self and others",
+      "healing relationship patterns and establishing healthy boundaries",
+      "expansion of your social and intimate connections"
+    ],
+    health: [
+      "mind-body-spirit integration and wellness",
+      "preventative health practices and vitality enhancement",
+      "establishing sustainable health routines and habits"
+    ],
+    spiritual: [
+      "deeper connection with your higher purpose",
+      "expansion of consciousness and spiritual awareness",
+      "integration of spiritual wisdom into everyday life"
+    ]
+  };
+
+  const planetaryPeriods = [
+    "Sun mahadasha brings focus to your authentic expression and life purpose",
+    "Moon mahadasha highlights emotional patterns and nurturing connections",
+    "Mars mahadasha activates your drive, courage, and determination",
+    "Mercury mahadasha enhances communication skills and intellectual pursuits",
+    "Jupiter mahadasha expands wisdom, abundance, and growth opportunities",
+    "Venus mahadasha refines relationships, values, and creative expression",
+    "Saturn mahadasha deepens discipline, responsibility, and life lessons",
+    "Rahu mahadasha intensifies desires and evolutionary growth edges",
+    "Ketu mahadasha supports spiritual detachment and liberation from past patterns"
+  ];
+
+  const themes = themesByType[userData.reportType] || themesByType.comprehensive;
+  const mainTheme = getRandomElement(themes);
+  
+  // Select a planet period based on birth data to seem deterministic
+  const birthDate = new Date(userData.dateOfBirth);
+  const birthSum = birthDate.getFullYear() + birthDate.getMonth() + birthDate.getDate();
+  const planetPeriod = planetaryPeriods[birthSum % planetaryPeriods.length];
+
+  // Generate forecast based on duration
+  const durationText = duration === 1 ? "year" : "years";
+  const intensityLevel = duration <= 3 ? "focused" : "transformative";
+  
+  return `§Overall ${duration}-Year Forecast§\n\n` +
+    `The next ${duration} ${durationText} represent a ${intensityLevel} period of ${mainTheme} in your life journey. ` +
+    `The ${planetPeriod}, influencing this entire duration. Vedic astrology reveals this as a significant phase where several planetary transits and dashas converge to create powerful opportunities for evolution.\n\n` +
+    
+    `**Career & Financial Path:** ${generateSectionContent('career', planets.slice(0, 3), duration)} ${generateSectionContent('financial', planets.slice(3, 6), duration + 1)}\n\n` +
+    
+    `**Health & Wellbeing:** ${generateSectionContent('health', planets.slice(2, 5), duration + 2)}\n\n` +
+    
+    `**Relationships & Personal Growth:** ${generateSectionContent('personal', planets.slice(1, 4), duration)}\n\n` +
+    
+    `**Spiritual Development:** This ${duration}-year cycle supports ${getRandomElement([
+      "deeper meditation practices and inner connection",
+      "practical application of spiritual principles in daily life",
+      "healing ancestral patterns through conscious awareness",
+      "expanding your understanding of universal consciousness",
+      "integrating spiritual insights with material existence"
+    ])}.\n\n` +
+    
+    `This forecast provides an overview of major themes and influences. The yearly and ${duration > 1 ? "quarterly" : "monthly"} sections that follow offer more specific guidance for navigating each period.`;
 }
 
 // Public Mapbox API key for demo purposes. For production, set your own!
@@ -475,13 +584,19 @@ export async function generateReport(userData: BirthData): Promise<ReportContent
     `${house} - ${influence}`
   );
 
+  // Add overall forecast for the entire duration
+  const overallForecast = generateOverallForecast(userData, userData.duration);
+
   // Generate prediction for each year in the duration
   for (let i = 1; i <= userData.duration; i++) {
+    const isYearlyReport = userData.duration === 1;
     const yearContent: ReportContent = {
       year: currentYear + i - 1,
       predictions: [
+        i === 1 ? overallForecast : "",
+        
         "§Introduction§\n\n" +
-        `Based on your Vedic birth chart analysis, this ${i === 1 ? "first" : "coming"} year holds significant potential for growth and transformation. The planetary configurations suggest a period of ${i % 2 === 0 ? "internal development" : "external manifestation"}.` +
+        `This ${getOrdinal(i)} year of your ${userData.duration}-year forecast holds significant potential for growth and transformation. The planetary configurations suggest a period of ${i % 2 === 0 ? "internal development" : "external manifestation"}.` +
         `\n\n§Your Birth Chart Highlights§\n\n` +
         `Key planetary positions at your time of birth:\n` +
         birthChartReadings.slice(0, 5).join("\n") +
@@ -489,7 +604,9 @@ export async function generateReport(userData: BirthData): Promise<ReportContent
         houseReadings.join("\n") +
         `\n\nThese cosmic positions form the foundation of your unique astrological blueprint and influence the predictions that follow.`,
         
-        ...generateQuarterlyPredictions(userData, i),
+        generateYearSummary(userData, i, birthChart),
+        
+        ...generatePredictions(userData, i, isYearlyReport),
         
         "§Spiritual Guidance & Remedies§\n\n" +
         `To harmonize with these cosmic energies:\n` +
@@ -500,13 +617,46 @@ export async function generateReport(userData: BirthData): Promise<ReportContent
         `• Beneficial colors based on your planetary positions: ${getRecommendedColors(birthChart)}\n` +
         `• Auspicious directions for important activities: ${getAuspiciousDirections(birthChart)}\n\n` +
         `Remember, these celestial insights are guides for your journey. Your free will and conscious choices shape your path forward.`
-      ]
+      ].filter(Boolean) // Remove empty strings
     };
     result.push(yearContent);
   }
 
   return result;
 }
+
+// Helper function to get ordinal suffix
+function getOrdinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+const supportiveActivities = [
+  "meditation and self-reflection",
+  "learning from spiritual texts",
+  "connecting with like-minded individuals",
+  "practicing mindfulness in daily activities",
+  "engaging in creative expression",
+  "physical movement aligned with cosmic rhythms",
+  "energy healing practices",
+  "rituals that honor natural cycles",
+  "journal writing during significant moon phases",
+  "studying ancient wisdom traditions"
+];
+
+const spiritualPractices = [
+  "developing a regular spiritual practice",
+  "maintaining emotional balance",
+  "cultivating inner wisdom",
+  "strengthening your connection to higher guidance",
+  "practicing gratitude and compassion",
+  "aligning with planetary energies through intention",
+  "working with gemstones associated with your birth chart",
+  "creating sacred space for contemplation",
+  "dream interpretation and analysis",
+  "breathwork techniques for spiritual awareness"
+];
 
 function getRecommendedGemstones(birthChart: Record<string, string>): string {
   const gemstoneMap: Record<string, string[]> = {

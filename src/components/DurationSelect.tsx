@@ -21,7 +21,9 @@ export function DurationSelect({ value, onChange }: DurationSelectProps) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="1">1 Year</SelectItem>
+          <SelectItem value="2">2 Years</SelectItem>
           <SelectItem value="3">3 Years</SelectItem>
+          <SelectItem value="4">4 Years</SelectItem>
           <SelectItem value="5">5 Years</SelectItem>
           <SelectItem value="7">7 Years</SelectItem>
           <SelectItem value="10">10 Years</SelectItem>
